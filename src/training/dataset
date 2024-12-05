@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Manuel"
+__date__ = "Thu Dec 05 13:13:23 2024"
+__credits__ = ["Manuel R. Popp"]
+__license__ = "MIT"
+__version__ = "0.0.1"
+__maintainer__ = "Manuel R. Popp"
+__email__ = "requests@cdpopp.de"
+__status__ = "Development"
+
+#-----------------------------------------------------------------------------|
+# Imports
+import torch
+
+#-----------------------------------------------------------------------------|
+# Classes
+class DataLoader():
+    """
+    A simple data loader for handling datasets with optional shuffling
+    and transformations.
+    
+    Parameters
+    ----------
+    data : torch.Tensor
+        The dataset containing the input samples.
+    labels : torch.Tensor
+        The labels corresponding to the dataset.
+    transform : callable, optional
+        A function or transformation to apply to each sample.
+        Defaults to None.
+    shuffle : bool, optional
+        Whether to shuffle the dataset at the start of each iteration.
+        Defaults to False.
+    
+    Attributes
+    ----------
+    data : torch.Tensor
+        The dataset containing the input samples.
+    labels : torch.Tensor
+        The labels corresponding to the dataset.
+    transform : callable or None
+        The transformation applied to each sample.
+    shuffle_on_epoch : bool
+        Indicates whether the dataset should be shuffled at the start of
+        each epoch.
+    current_index : int
+        Tracks the current position in the dataset during iteration.
+    
+    Methods
+    -------
+    __len__()
+        Returns the number of samples in the dataset.
+    __getitem__(index)
+        Retrieves a sample and its corresponding label by index.
+    __iter__()
+        Initializes the iterator and optionally shuffles the dataset.
+    __next__()
+        Returns the next sample and label pair from the dataset.
+    shuffle()
+        Shuffles the dataset and labels in unison.
+    
+    """
+    def __init__(self, data, labels, transform = None, shuffle = False):
+        """
+        Initialize the DataLoader with data, labels, transformations,
+        and shuffle settings.
+        
+        Parameters
+        ----------
+        data : torch.Tensor
+            The dataset containing the input samples.
+        labels : torch.Tensor
+            The labels corresponding to the dataset.
+        transform : callable, optional
+            A function or transformation to apply to each sample.
+            Defaults to None.
+        shuffle : bool, optional
+            Whether to shuffle the dataset at the start of each
+            iteration. Defaults to False.
+        
+        """
+        self.data = data
+        self.labels = labels
+        self.transform = transform
+        self.shuffle_on_epoch = shuffle
+    
+    def __len__(self):
+        """
+        Returns the number of samples in the dataset.
+        
+        Returns
+        -------
+        int
+            The number of samples in the dataset.
+        
+        """
+        return len(self.data)
+    
+    def __getitem__(self, index):
+        """
+        Retrieves a sample and its corresponding label by index.
+        
+        Parameters
+        ----------
+        index : int
+            The index of the sample to retrieve.
+        
+        Returns
+        -------
+        sample : torch.Tensor
+            The input sample at the given index.
+        label : torch.Tensor
+            The label corresponding to the input sample.
+        
+        """
+        sample = self.data[index]
+        label = self.labels[index]
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample, label
+    
+    def __iter__(self):
+        """
+        Initializes the iterator and shuffles the dataset if shuffle was
+        set to True.
+        
+        If shuffling is enabled, the dataset is shuffled at the start of
+        each iteration.
+        
+        Returns
+        -------
+        DataLoader
+            The DataLoader instance itself as an iterator.
+        
+        """
+        if self.shuffle_on_epoch:
+            self.shuffle()
+
+        self.current_index = 0
+        return self
+
+    def __next__(self):
+        """
+        Returns the next sample and label pair from the dataset.
+        
+        Raises
+        ------
+        StopIteration
+            When the end of the dataset is reached.
+        
+        Returns
+        -------
+        tuple
+            A tuple containing the next input sample and its
+            corresponding label.
+        
+        """
+        if self.current_index >= len(self):
+            raise StopIteration
+
+        item = self[self.current_index]
+        self.current_index += 1
+        return item
+    
+    def shuffle(self):
+        """
+        Shuffles dataset and labels.
+        
+        """
+        indices = torch.randperm(len(self))
+        self.data = self.data[indices]
+        self.labels = self.labels[indices]
